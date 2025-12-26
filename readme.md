@@ -707,3 +707,425 @@ Loopback1              10.1.1.1        YES other  up                    up
 Result: Loopback2 was NOT created - NETCONF validated configuration and rejected duplicate IP before applying changes.
 
 **Key learning:** NETCONF validates entire configuration before applying. If any command fails, none are applied.
+
+### 12: Part 6 Challenge - Advanced NETCONF Operations
+
+**Created advanced script:** `netconf_challenge.py`
+
+**Features implemented:**
+- Function-based structure for reusability
+- Dynamic loopback creation with parameters
+- Interface deletion capability
+- Interface query and display
+
+**Script structure:**
+```python
+from ncclient import manager
+import xml.dom.minidom
+
+def connect_device():
+    return manager.connect(
+        host="192.168.127.130",
+        port=830,
+        username="cisco",
+        password="cisco123!",
+        hostkey_verify=False
+    )
+
+def create_loopback(m, loop_num, ip_address):
+    # Creates loopback with specified number and IP
+    
+def delete_loopback(m, loop_num):
+    # Deletes loopback by number
+    
+def get_interfaces(m):
+    # Retrieves and formats all interfaces
+```
+
+**Script execution:**
+```bash
+python3 ncclient-netconf.py
+```
+
+**Output:**
+```
+Created Loopback100: 10.100.100.1
+Created Loopback200: 10.200.200.1
+
+--- Current Interfaces ---
+<?xml version="1.0" ?>
+<rpc-reply>
+  <data>
+    <interfaces>
+      <interface>
+        <name>GigabitEthernet1</name>
+        <description>VBox</description>
+      </interface>
+      <interface>
+        <name>Loopback1</name>
+        <ip>10.1.1.1</ip>
+      </interface>
+      <interface>
+        <name>Loopback100</name>
+        <ip>10.100.100.1</ip>
+      </interface>
+      <interface>
+        <name>Loopback200</name>
+        <ip>10.200.200.1</ip>
+      </interface>
+    </interfaces>
+  </data>
+</rpc-reply>
+
+Deleted Loopback100
+Script complete!
+```
+
+**Verification on CSR1kv:**
+```bash
+NEWHOSTNAME# show ip interface brief
+Interface              IP-Address      OK? Method Status                Protocol
+GigabitEthernet1       192.168.127.130 YES DHCP   up                    up      
+Loopback1              10.1.1.1        YES other  up                    up      
+Loopback200            10.200.200.1    YES other  up                    up
+```
+
+**Operations performed:**
+1. Created Loopback100 with IP 10.100.100.1/24
+2. Created Loopback200 with IP 10.200.200.1/24
+3. Retrieved all interfaces in formatted XML
+4. Deleted Loopback100 using NETCONF delete operation
+5. Verified Loopback100 removed, Loopback200 remains
+
+**Key skills demonstrated:**
+- Programmatic interface creation/deletion
+- Dynamic configuration using f-strings
+- Structured functions for reusable NETCONF code
+- Complete automation workflow
+- NETCONF delete operations
+
+---
+
+## Lab Summary
+
+**Completed all parts:**
+- Part 1: VM setup and connectivity
+- Part 2: Manual NETCONF session via SSH
+- Part 3: Python ncclient connection
+- Part 4: Configuration retrieval and filtering
+- Part 5: Device configuration with validation
+- Part 6: Advanced programmatic operations
+
+**Final router state:**
+- Hostname: NEWHOSTNAME
+- Interfaces: GigabitEthernet1, Loopback1, Loopback200
+- All configurations applied via NETCONF
+
+**Lab complete.**
+
+# RESTCONF Lab Documentation
+
+## Part 1: Connectivity Verification
+
+**Verified connectivity:**
+```bash
+ping 192.168.127.130
+ssh cisco@192.168.127.130
+```
+
+Password: `cisco123!`
+
+## Part 2: Configure RESTCONF on CSR1kv
+
+**Enabled RESTCONF and HTTPS:**
+```bash
+NEWHOSTNAME# configure terminal
+NEWHOSTNAME(config)# restconf
+NEWHOSTNAME(config)# ip http secure-server
+NEWHOSTNAME(config)# ip http authentication local
+NEWHOSTNAME(config)# exit
+```
+
+**Verified services running:**
+```bash
+NEWHOSTNAME# show platform software yang-management process
+confd            : Running 
+nesd             : Running 
+syncfd           : Running 
+ncsshd           : Running 
+dmiauthd         : Running 
+nginx            : Running 
+ndbmand          : Running 
+pubd             : Running
+```
+
+Result: nginx (HTTPS server) running and ready for RESTCONF API calls.
+
+## Part 3: Configure Postman
+
+**Settings configured:**
+- File > Settings > SSL certificate verification: OFF
+
+## Part 4: Postman GET Requests
+
+### Test 1: Verify RESTCONF connection
+
+**Request:**
+- Type: GET
+- URL: `https://192.168.127.130/restconf/`
+- Authorization: Basic Auth (cisco / cisco123!)
+- Headers:
+  - Content-Type: `application/yang-data+json`
+  - Accept: `application/yang-data+json`
+
+**Response:**
+```json
+{
+    "ietf-restconf:restconf": {
+        "data": {},
+        "operations": {},
+        "yang-library-version": "2016-06-21"
+    }
+}
+```
+
+Status: 200 OK - RESTCONF connection verified.
+
+### Test 2: Get all interfaces
+
+**Request:**
+- URL: `https://192.168.127.130/restconf/data/ietf-interfaces:interfaces`
+
+**Response:** JSON data showing all interfaces (GigabitEthernet1, Loopback1, Loopback200)
+
+### Test 3: Configure static IP on GigabitEthernet1
+
+**Issue:** DHCP IP doesn't show in RESTCONF responses
+
+**Solution:**
+```bash
+configure terminal
+interface GigabitEthernet1
+ip address 192.168.127.130 255.255.255.0
+end
+```
+
+### Test 4: Get specific interface
+
+**Request:**
+- URL: `https://192.168.127.130/restconf/data/ietf-interfaces:interfaces/interface=GigabitEthernet1`
+
+**Response:**
+```json
+{
+    "ietf-interfaces:interface": {
+        "name": "GigabitEthernet1",
+        "description": "VBox",
+        "type": "iana-if-type:ethernetCsmacd",
+        "enabled": true,
+        "ietf-ip:ipv4": {
+            "address": [
+                {
+                    "ip": "192.168.127.130",
+                    "netmask": "255.255.255.0"
+                }
+            ]
+        },
+        "ietf-ip:ipv6": {}
+    }
+}
+```
+
+Result: IP address now visible in RESTCONF response.
+
+## Part 5: Postman PUT Request
+
+**Created Loopback3 interface:**
+
+**Request:**
+- Type: PUT
+- URL: `https://192.168.127.130/restconf/data/ietf-interfaces:interfaces/interface=Loopback3`
+- Body (raw JSON):
+```json
+{
+  "ietf-interfaces:interface": {
+    "name": "Loopback3",
+    "description": "My first RESTCONF loopback",
+    "type": "iana-if-type:softwareLoopback",
+    "enabled": true,
+    "ietf-ip:ipv4": {
+      "address": [
+        {
+          "ip": "10.3.3.3",
+          "netmask": "255.255.255.0"
+        }
+      ]
+    },
+    "ietf-ip:ipv6": {}
+  }
+}
+```
+
+**Response:** Status: 201 Created
+
+**Verification:**
+```bash
+NEWHOSTNAME# show ip interface brief
+Interface              IP-Address      OK? Method Status                Protocol
+GigabitEthernet1       192.168.127.130 YES manual up                    up      
+Loopback1              10.1.1.1        YES other  up                    up      
+Loopback3              10.3.3.3        YES other  up                    up      
+Loopback200            10.200.200.1    YES other  up                    up
+```
+
+Result: Loopback3 successfully created via RESTCONF PUT request.
+
+## Part 6: Python GET Script
+
+**Created:** `restconf-get.py`
+```python
+import json
+import requests
+requests.packages.urllib3.disable_warnings()
+
+api_url = "https://192.168.127.130/restconf/data/ietf-interfaces:interfaces"
+
+headers = { "Accept": "application/yang-data+json",
+            "Content-type":"application/yang-data+json"
+          }
+
+basicauth = ("cisco", "cisco123!")
+
+resp = requests.get(api_url, auth=basicauth, headers=headers, verify=False)
+
+print(resp)
+
+response_json = resp.json()
+print(json.dumps(response_json, indent=4))
+```
+
+**Execution:**
+```bash
+python3 restconf-get.py
+```
+
+**Output:**
+```
+<Response [200]>
+{
+    "ietf-interfaces:interfaces": {
+        "interface": [
+            {
+                "name": "GigabitEthernet1",
+                "ip": "192.168.127.130"
+            },
+            {
+                "name": "Loopback1",
+                "ip": "10.1.1.1"
+            },
+            {
+                "name": "Loopback3",
+                "ip": "10.3.3.3"
+            },
+            {
+                "name": "Loopback200",
+                "ip": "10.200.200.1"
+            }
+        ]
+    }
+}
+```
+
+Result: Python script successfully retrieves and formats interface data from RESTCONF API.
+
+## Part 7: Python PUT Script
+
+**Created:** `restconf-put.py`
+```python
+import json
+import requests
+requests.packages.urllib3.disable_warnings()
+
+api_url = "https://192.168.127.130/restconf/data/ietf-interfaces:interfaces/interface=Loopback4"
+
+headers = { "Accept": "application/yang-data+json",
+            "Content-type":"application/yang-data+json"
+          }
+
+basicauth = ("cisco", "cisco123!")
+
+yangConfig = {
+    "ietf-interfaces:interface": {
+        "name": "Loopback4",
+        "description": "My second RESTCONF loopback",
+        "type": "iana-if-type:softwareLoopback",
+        "enabled": True,
+        "ietf-ip:ipv4": {
+            "address": [
+                {
+                    "ip": "10.4.4.4",
+                    "netmask": "255.255.255.0"
+                }
+            ]
+        },
+        "ietf-ip:ipv6": {}
+    }
+}
+
+resp = requests.put(api_url, data=json.dumps(yangConfig), auth=basicauth, headers=headers, verify=False)
+
+if(resp.status_code >= 200 and resp.status_code <= 299):
+    print("STATUS OK: {}".format(resp.status_code))
+else:
+    print('Error. Status Code: {} \nError message: {}'.format(resp.status_code,resp.json()))
+```
+
+**Execution:**
+```bash
+python3 restconf-put.py
+```
+
+**Output:**
+```
+STATUS OK: 201
+```
+
+**Verification:**
+```bash
+NEWHOSTNAME# show ip interface brief
+Interface              IP-Address      OK? Method Status                Protocol
+GigabitEthernet1       192.168.127.130 YES manual up                    up      
+Loopback1              10.1.1.1        YES other  up                    up      
+Loopback3              10.3.3.3        YES other  up                    up      
+Loopback4              10.4.4.4        YES other  up                    up      
+Loopback200            10.200.200.1    YES other  up                    up
+```
+
+Result: Loopback4 successfully created via Python RESTCONF PUT request.
+
+## Lab Summary
+
+**Completed all parts:**
+- Part 1: VM connectivity verification
+- Part 2: RESTCONF and HTTPS configuration on CSR1kv
+- Part 3: Postman SSL configuration
+- Part 4: Postman GET requests (verify, get all, get specific)
+- Part 5: Postman PUT request (created Loopback3)
+- Part 6: Python GET script
+- Part 7: Python PUT script (created Loopback4)
+
+**Key concepts demonstrated:**
+- RESTCONF API over HTTPS
+- RESTful operations (GET, PUT)
+- YANG data models (ietf-interfaces)
+- JSON data formatting
+- Basic authentication
+- Python requests library
+- Postman API testing
+
+**Final router state:**
+- Hostname: NEWHOSTNAME
+- Interfaces: GigabitEthernet1, Loopback1, Loopback3, Loopback4, Loopback200
+- All RESTCONF operations successful
+
+**Lab complete.**
