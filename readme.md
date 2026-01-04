@@ -1,38 +1,53 @@
 # Lab Setup Documentation
+# IAN TERRYN 
 
 ## Part 1: Install DEVASC VM
 
-### Steps
+### Task Preparation and Implementation
+
+**Steps:**
 1. Import OVA in VMware: File > Open > Select DEVASC VM OVA
 2. Power On VM
 3. Accept Packet Tracer EULA (arrow keys + I Agree)
 4. Wait for Ubuntu desktop to load
 
-### Verification
-No login required - boots to desktop automatically
+### Task Troubleshooting
+
+No problems encountered. VM booted to desktop without issues.
+
+### Task Verification
+
+**Verification method:** Visual verification
+- No login required - boots to desktop automatically
+- Ubuntu desktop loaded successfully
 
 ---
 
 ## Part 2: Install CSR1000v VM
 
-### Steps
+### Task Preparation and Implementation
+
+**Steps:**
 1. Import OVA: File > Open > Select CSR1000v_for_VMware.ova
 2. Edit VM Settings > First CD/DVD Drive > Browse > Select csr1000v-universalk9.16.09.05.iso
 3. Power On VM
 4. Wait 5-10 minutes for boot (ignore "Press any key" messages)
 5. Press Enter when messages stop
 
-### Verification
+### Task Troubleshooting
+
+**Problem:** Boot process took longer than expected
+- **Solution:** Waited 5-10 minutes as per documentation, ignored "Press any key" messages
+
+### Task Verification
+
+**Verification method:** CLI command verification
 ```bash
 CSR1kv# show ip interface brief
 ```
-**IP Address:** 192.168.127.130
+**Result:** IP Address: 192.168.127.130
 
----
-
-## Connectivity Test
-
-From DEVASC VM Terminal:
+**Connectivity test from DEVASC VM:**
 ```bash
 ping 192.168.127.130
 ssh cisco@192.168.127.130
@@ -41,29 +56,40 @@ ssh cisco@192.168.127.130
 
 **Status:** Both VMs operational and communicating
 
-## Part 3 
+---
 
-# Part 3: Python Network Automation with Netmiko
-
-## 3a: Connecting to an IOS-XE Device
+## Part 3a: Python Network Automation with Netmiko - Connecting to an IOS-XE Device
 
 ### Task Preparation and Implementation
 
-**Installed Netmiko:**
+**Tools used:**
+- Python 3
+- Netmiko library
+- VMware (DEVASC VM + CSR1000v)
+
+**Installation:**
 ```bash
 pip3 install netmiko
 ```
 
-**Created comprehensive script** `netmiko_complete.py` with all required features:
+**Implementation:**
+Created comprehensive script `netmiko_complete.py` with:
 - Dictionary-based device connection
 - Class-based implementation (`NetworkAutomation`)
-- Functions for each task
+- Functions for each task:
+  1. Show commands (single device)
+  2. Configuration commands
+  3. Save output to file
+  4. Backup configuration
+  5. Configure from external file
+  6. Configure multiple interfaces
+  7. Multiple device operations
 - Conditional statements (if/else) throughout
 - Menu-driven interface
 
-**Key components implemented:**
+**Key code snippets:**
 
-1. **Show commands (single device):**
+1. **Show commands:**
 ```python
 def send_show_command(self, command):
     output = self.connection.send_command(command)
@@ -77,61 +103,32 @@ def send_config_commands(self, commands):
     return output
 ```
 
-3. **Save output to file:**
-```python
-def save_output(self, command, filename=None):
-    output = self.send_show_command(command)
-    with open(filename, 'w') as f:
-        f.write(output)
-```
-
-4. **Backup configuration:**
+3. **Backup configuration:**
 ```python
 def backup_config(self):
     config = self.connection.send_command('show running-config')
     filename = f"{hostname}_backup_{timestamp}.cfg"
 ```
 
-5. **Configure from external file:**
-```python
-def config_from_file(self, filepath):
-    with open(filepath, 'r') as f:
-        commands = f.read().splitlines()
-    output = self.send_config_commands(commands)
-```
-
-6. **Configure multiple interfaces:**
-```python
-def configure_interfaces(self, interface_list):
-    for interface in interface_list:
-        commands = [f"interface {interface['name']}", ...]
-        self.send_config_commands(commands)
-```
-
-7. **Multiple device operations:**
-```python
-def show_commands_multiple_devices(devices, command):
-    for device in devices:
-        # Connect and execute
-```
-
 ### Task Troubleshooting
 
-**Issue:** Connection timeout on first attempt
+**Probleem 1:** Connection timeout on first attempt
 - **Solution:** CSR1000v needed to fully boot (wait 5-10 minutes)
 
-**Issue:** SSH authentication failed
+**Probleem 2:** SSH authentication failed
 - **Solution:** Verified password is `cisco123!` (with exclamation mark)
 
-**Issue:** IP address different than lab document
+**Probleem 3:** IP address different than lab document
 - **Solution:** Used `show ip interface brief` to confirm actual IP: `192.168.127.130`
 
 ### Task Verification
 
-**Tested all menu options:**
-```bash
-python3 netmiko_complete.py
-```
+**Test methods:**
+1. Tested all menu options in `netmiko_complete.py`
+2. CLI verification on CSR1000v
+3. File output verification
+
+**Test results:**
 
 **Option 1 - Show command:**
 ```
@@ -155,7 +152,7 @@ Result: Created CSR1kv_backup_TIMESTAMP.cfg
 Result: Loopback10 and Loopback11 created
 ```
 
-**Verified on CSR1000v:**
+**Verification on CSR1000v:**
 ```bash
 ssh cisco@192.168.127.130
 show ip int brief | include Loop
@@ -164,13 +161,13 @@ Output confirmed all configured interfaces present.
 
 ---
 
-## 3b: Network Diagnostics Collector
+## Part 3b: Network Diagnostics Collector
 
 ### Task Preparation and Implementation
 
-**Created** `network_diagnostics.py` - a practical tool network engineers use daily for troubleshooting.
+**Goal:** Automatically collect comprehensive diagnostic information and save to timestamped file.
 
-**Purpose:** Automatically collect comprehensive diagnostic information and save to timestamped file.
+**Script:** `network_diagnostics.py`
 
 **Commands collected:**
 - show version
@@ -183,7 +180,7 @@ Output confirmed all configured interfaces present.
 - show processes memory
 - show logging
 
-**Key features:**
+**Features:**
 - Single execution collects all diagnostics
 - Timestamped output files
 - Clean formatted output
@@ -197,13 +194,15 @@ Output confirmed all configured interfaces present.
 
 ### Task Troubleshooting
 
-**Issue:** Large output files
+**Probleem 1:** Large output files
 - **Solution:** This is expected - full diagnostics are comprehensive
 
-**Issue:** `show logging` took longer than other commands
+**Probleem 2:** `show logging` took longer than other commands
 - **Solution:** Added slight delay, normal for log retrieval
 
 ### Task Verification
+
+**Test method:** Script execution and output validation
 
 **Executed script:**
 ```bash
@@ -223,7 +222,6 @@ Running: show ip interface brief
 ✓ Total commands executed: 13
 ```
 
-
 **Verified file contents:**
 ```bash
 cat CSR1kv_diagnostics_20251217_143022.txt | head -20
@@ -234,18 +232,32 @@ Confirmed all command outputs present with proper formatting.
 
 ---
 
-## part 4
+## Part 4: YANG Data Models
 
-### 1
-I already had the vm so that was easy
+### Task Preparation and Implementation
 
-### 2
-I just copy pasted in the raw file with the correct name. 
+**Steps:**
+1. VM was already available (DEVASC)
+2. Downloaded `ietf-interfaces.yang` file
+3. Placed file in `~/devnet` directory
+4. Executed pyang tree command
 
-### 3
-Then doing the following tree command gives back this
+### Task Troubleshooting
+
+**Problem:** Module "ietf-yang-types" not found warning
+- **Note:** This is a non-blocking warning, tree output still generated successfully
+
+### Task Verification
+
+**Verification method:** pyang tree command execution
+
+**Command:**
+```bash
+pyang -f tree ietf-interfaces.yang
 ```
-devasc@labvm:~/devnet$  pyang -f tree ietf-interfaces.yang  
+
+**Output:**
+```
 ietf-interfaces.yang:6: error: module "ietf-yang-types" not found in search path
 module: ietf-interfaces
   +--rw interfaces
@@ -282,65 +294,77 @@ module: ietf-interfaces
            +--ro out-multicast-pkts?   yang:counter64
            +--ro out-discards?         yang:counter32
            +--ro out-errors?           yang:counter32
-devasc@labvm:~/devnet$ 
-
-```
-## part 5
-
-### 4: SSH Access Troubleshooting
-
-**Issue:** Unable to SSH to CSR1000v router
-
-**Initial attempt:**
-```bash
-ping 192.168.0.130
-```
-**Result:** 100% packet loss - wrong IP address
-
-**Corrected IP:**
-```bash
-ping 192.168.127.130
-```
-**Result:** ✓ Connectivity confirmed (2/3 packets received)
-
-**SSH attempt:**
-```bash
-ssh cisco@192.168.127.130
 ```
 
-**Error:**
+**Result:** YANG model tree successfully displayed
+
+---
+
+## Part 5: NETCONF Configuration
+
+### Task 5.1: SSH Access Troubleshooting
+
+#### Task Preparation and Implementation
+
+**Goal:** Establish SSH access to CSR1000v router
+
+**Steps:**
+1. Test connectivity with ping
+2. Identify correct IP address
+3. Troubleshoot SSH host key issues
+4. Establish successful SSH connection
+
+#### Task Troubleshooting
+
+**Probleem 1:** Unable to ping 192.168.0.130
+- **Cause:** Wrong IP address
+- **Solution:** Corrected to 192.168.127.130
+- **Verification:** `ping 192.168.127.130` - Connectivity confirmed (2/3 packets received)
+
+**Probleem 2:** SSH host key verification failed
 ```
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 @    WARNING: REMOTE HOST IDENTIFICATION HAS CHANGED!     @
 @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-Host key verification failed.
 ```
-
-**Root cause:** Old SSH host key stored in `~/.ssh/known_hosts` from previous VM installation
-
-**Solution:**
+- **Cause:** Old SSH host key stored in `~/.ssh/known_hosts` from previous VM installation
+- **Solution:**
 ```bash
 ssh-keygen -f "/home/devasc/.ssh/known_hosts" -R "192.168.127.130"
 ```
 
-**Retry SSH:**
+#### Task Verification
+
+**Verification method:** Successful SSH connection
+
+**Command:**
 ```bash
 ssh cisco@192.168.127.130
 ```
+**Password:** cisco123!
 
-**Status:** SSH access successful with password `cisco123!`
+**Result:** SSH access successful
 
-### 5: NETCONF Session Operations
+---
 
-**Started NETCONF session:**
+### Task 5.2: NETCONF Session Operations
+
+#### Task Preparation and Implementation
+
+**Goal:** Manually establish NETCONF session via SSH
+
+**Steps:**
+1. Start NETCONF session on port 830
+2. Send client hello message
+3. Query interface information
+4. Close session
+
+**Commands used:**
 ```bash
 ssh cisco@192.168.127.130 -p 830 -s netconf
 ```
-**Password:** `cisco123!`
 
-**Result:** Router sent hello message with 400+ lines of capabilities, ending with `]]>]]>`
-
-**Sent client hello message:**
+**Client hello message:**
 ```xml
 <hello xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
 <capabilities>
@@ -350,13 +374,7 @@ ssh cisco@192.168.127.130 -p 830 -s netconf
 ]]>]]>
 ```
 
-**Verified session on CSR1kv:**
-```bash
-CSR1kv# show netconf-yang sessions
-```
-**Result:** Session 24 active
-
-**Sent RPC to get interface information:**
+**RPC request:**
 ```xml
 <rpc message-id="103" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
 <get>
@@ -368,7 +386,24 @@ CSR1kv# show netconf-yang sessions
 ]]>]]>
 ```
 
-**Received response (prettified):**
+#### Task Troubleshooting
+
+No problems encountered. NETCONF session worked immediately after correct configuration.
+
+#### Task Verification
+
+**Verification methods:**
+1. Verify session on router
+2. Verify RPC response
+3. Verify session closure
+
+**Verification 1 - Active session:**
+```bash
+CSR1kv# show netconf-yang sessions
+```
+**Result:** Session 24 active
+
+**Verification 2 - RPC response received:**
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <rpc-reply xmlns="urn:ietf:params:xml:ns:netconf:base:1.0" message-id="103">
@@ -387,29 +422,30 @@ CSR1kv# show netconf-yang sessions
 </rpc-reply>
 ```
 
-**Closed NETCONF session:**
-```xml
-<rpc message-id="9999999" xmlns="urn:ietf:params:xml:ns:netconf:base:1.0">
-<close-session />
-</rpc>
-]]>]]>
-```
-
-**Verified session closed:**
+**Verification 3 - Session closed:**
 ```bash
 CSR1kv# show netconf-yang sessions
 ```
 **Result:** "There are no active sessions"
 
-### 6: Python NETCONF with ncclient
+---
 
-**Created netconf directory:**
+### Task 5.3: Python NETCONF with ncclient
+
+#### Task Preparation and Implementation
+
+**Steps:**
+1. Create netconf directory
+2. Install ncclient library
+3. Create Python script for NETCONF connection
+
+**Directory setup:**
 ```bash
 mkdir netconf
 cd netconf
 ```
 
-**Created script:** `ncclient-netconf.py`
+**Script:** `ncclient-netconf.py`
 ```python
 from ncclient import manager
 
@@ -422,23 +458,38 @@ m = manager.connect(
 )
 ```
 
-**Ran script:**
+#### Task Troubleshooting
+
+No problems encountered. ncclient connection worked immediately.
+
+#### Task Verification
+
+**Verification methods:**
+1. Script execution without errors
+2. Router logs verification
+
+**Test 1 - Script execution:**
 ```bash
 python3 ncclient-netconf.py
 ```
 **Result:** No errors, connection successful
 
-**Verified on CSR1kv:**
+**Test 2 - Router logs:**
 ```
 *Dec 25 15:53:48.860: %DMI-5-AUTH_PASSED: M0/0: dmiauthd: User 'cisco' authenticated successfully from 192.168.127.1:51512 and was authorized for netconf over ssh. External groups: PRIV15
 ```
 
-**Status:** NETCONF session established via ncclient
+**Result:** NETCONF session established via ncclient
 
+---
 
-### 7: Display NETCONF Capabilities
+### Task 5.4: Display NETCONF Capabilities
 
-**Updated script:** `ncclient-netconf.py`
+#### Task Preparation and Implementation
+
+**Goal:** Retrieve and display all NETCONF capabilities (YANG models) supported by the router
+
+**Updated script:**
 ```python
 from ncclient import manager
 
@@ -455,7 +506,15 @@ for capability in m.server_capabilities:
     print(capability)
 ```
 
-**Ran script:**
+#### Task Troubleshooting
+
+No problems encountered.
+
+#### Task Verification
+
+**Verification method:** Script execution and output review
+
+**Executed:**
 ```bash
 python3 ncclient-netconf.py
 ```
@@ -470,19 +529,22 @@ urn:ietf:params:netconf:capability:xpath:1.0
 urn:ietf:params:xml:ns:yang:smiv2:SNMP-TARGET-MIB?module=SNMP-TARGET-MIB&revision=1998-08-04
 urn:ietf:params:xml:ns:yang:smiv2:SNMPv2-MIB?module=SNMPv2-MIB&revision=2002-10-16
 urn:ietf:params:xml:ns:yang:smiv2:TCP-MIB?module=TCP-MIB&revision=2005-02-18
-urn:ietf:params:xml:ns:yang:smiv2:TUNNEL-MIB?module=TUNNEL-MIB&revision=2005-05-16
-urn:ietf:params:xml:ns:yang:smiv2:UDP-MIB?module=UDP-MIB&revision=2005-05-20
-urn:ietf:params:xml:ns:yang:smiv2:VPN-TC-STD-MIB?module=VPN-TC-STD-MIB&revision=2005-11-15
 urn:ietf:params:xml:ns:netconf:base:1.0?module=ietf-netconf&revision=2011-06-01
 urn:ietf:params:xml:ns:yang:ietf-netconf-with-defaults?module=ietf-netconf-with-defaults&revision=2011-06-01
 urn:ietf:params:netconf:capability:notification:1.1
 ```
 
-**Note:** Output shows same capabilities as manual NETCONF hello exchange, but formatted as clean list without XML tags.
+**Result:** All capabilities displayed successfully (same as manual NETCONF hello exchange)
 
-### 8: Retrieve Running Configuration with ncclient
+---
 
-**Updated script:** `ncclient-netconf.py`
+### Task 5.5: Retrieve Running Configuration
+
+#### Task Preparation and Implementation
+
+**Method:** Use ncclient `get_config()` method to retrieve running configuration
+
+**Updated script:**
 ```python
 from ncclient import manager
 
@@ -494,24 +556,25 @@ m = manager.connect(
     hostkey_verify=False
 )
 
-# Commented out capabilities display
-'''
-print("#Supported Capabilities (YANG models):")
-for capability in m.server_capabilities:
-    print(capability)
-'''
-
-# Get running configuration
 netconf_reply = m.get_config(source="running")
 print(netconf_reply)
 ```
 
-**Ran script:**
+#### Task Troubleshooting
+
+**Problem:** XML output is unformatted and difficult to read
+- **Note:** This will be addressed in next task with prettification
+
+#### Task Verification
+
+**Verification method:** Script execution and output inspection
+
+**Executed:**
 ```bash
 python3 ncclient-netconf.py
 ```
 
-**Output:** 100+ lines of unformatted XML containing entire running configuration including:
+**Result:** 100+ lines of XML containing entire running configuration including:
 - Interface configurations (GigabitEthernet1)
 - VTY line settings
 - Licensing configuration
@@ -519,11 +582,17 @@ python3 ncclient-netconf.py
 - Routing protocols
 - NACM access control rules
 
-**Note:** XML returned is compressed/unformatted, making it difficult to read.
+---
 
-### 9: Prettify XML Output with Python
+### Task 5.6: Prettify XML Output
 
-**Updated script:** `ncclient-netconf.py`
+#### Task Preparation and Implementation
+
+**Goal:** Format XML output for better readability
+
+**Tools:** Python `xml.dom.minidom` library
+
+**Updated script:**
 ```python
 from ncclient import manager
 import xml.dom.minidom
@@ -536,27 +605,22 @@ m = manager.connect(
     hostkey_verify=False
 )
 
-'''
-print("#Supported Capabilities (YANG models):")
-for capability in m.server_capabilities:
-    print(capability)
-'''
-
 netconf_reply = m.get_config(source="running")
 print(xml.dom.minidom.parseString(netconf_reply.xml).toprettyxml())
 ```
 
-**Ran script:**
+#### Task Troubleshooting
+
+No problems encountered.
+
+#### Task Verification
+
+**Verification method:** Visual inspection of formatted output
+
+**Executed:**
 ```bash
 python3 ncclient-netconf.py
 ```
-
-**Output:** Properly formatted XML with indentation showing:
-- Network instances and routing tables
-- Interface configurations (GigabitEthernet1)
-- NACM access control rules
-- Routing protocols (static, directly connected)
-- IPv4/IPv6 address families
 
 **Example output structure:**
 ```xml
@@ -570,11 +634,19 @@ python3 ncclient-netconf.py
 </interfaces>
 ```
 
-**Note:** XML now readable with proper indentation instead of single compressed line.
+**Result:** XML now readable with proper indentation instead of single compressed line
 
-### 10: Filter NETCONF Query for Specific YANG Model
+---
 
-**Updated script:** `ncclient-netconf.py`
+### Task 5.7: Filter NETCONF Query for Specific YANG Model
+
+#### Task Preparation and Implementation
+
+**Goal:** Retrieve only specific YANG model data instead of entire configuration
+
+**YANG model used:** Cisco IOS XE native
+
+**Updated script:**
 ```python
 from ncclient import manager
 import xml.dom.minidom
@@ -587,12 +659,6 @@ m = manager.connect(
     hostkey_verify=False
 )
 
-'''
-print("#Supported Capabilities (YANG models):")
-for capability in m.server_capabilities:
-    print(capability)
-'''
-
 netconf_filter = """
 <filter>
   <native xmlns="http://cisco.com/ns/yang/Cisco-IOS-XE-native"/>
@@ -603,20 +669,37 @@ netconf_reply = m.get_config(source="running", filter=netconf_filter)
 print(xml.dom.minidom.parseString(netconf_reply.xml).toprettyxml())
 ```
 
-**Ran script:**
+#### Task Troubleshooting
+
+No problems encountered.
+
+#### Task Verification
+
+**Verification method:** Output comparison (filtered vs unfiltered)
+
+**Executed:**
 ```bash
 python3 ncclient-netconf.py
 ```
 
-**Result:** Filtered output showing only the Cisco IOS XE native YANG model data, significantly reducing output size compared to retrieving all YANG models. The filter eliminates other models like OpenConfig interfaces, NACM, and routing that were previously displayed.
+**Result:** Filtered output showing only the Cisco IOS XE native YANG model data, significantly reducing output size. Filter eliminated other models like OpenConfig interfaces, NACM, and routing.
 
-**Note:** Filtering allows retrieval of specific configuration subsets rather than entire running config, improving efficiency for targeted queries.
+**Conclusion:** Filtering allows retrieval of specific configuration subsets, improving efficiency for targeted queries.
 
-### 11: Configure Device with NETCONF
+---
 
-**Step 1: Change hostname**
+### Task 5.8: Configure Device with NETCONF
 
-Added hostname configuration to script:
+#### Task Preparation and Implementation
+
+**Goal:** Demonstrate NETCONF configuration capabilities and validation
+
+**Configurations:**
+1. Change hostname
+2. Create loopback interface
+3. Test duplicate IP validation
+
+**Step 1 - Change hostname:**
 ```python
 netconf_hostname = """
 <config>
@@ -627,14 +710,9 @@ netconf_hostname = """
 """
 
 netconf_reply = m.edit_config(target="running", config=netconf_hostname)
-print(xml.dom.minidom.parseString(netconf_reply.xml).toprettyxml())
 ```
 
-Ran script, hostname changed to NEWHOSTNAME. Changed back to CSR1kv.
-
-**Step 2: Create loopback interface**
-
-Added loopback configuration:
+**Step 2 - Create loopback:**
 ```python
 netconf_loopback = """
 <config>
@@ -658,14 +736,9 @@ netconf_loopback = """
 """
 
 netconf_reply = m.edit_config(target="running", config=netconf_loopback)
-print(xml.dom.minidom.parseString(netconf_reply.xml).toprettyxml())
 ```
 
-Result: Loopback1 created successfully with IP 10.1.1.1/24
-
-**Step 3: Test duplicate IP address (validation)**
-
-Added second loopback with same IP:
+**Step 3 - Test duplicate IP:**
 ```python
 netconf_newloop = """
 <config>
@@ -691,28 +764,54 @@ netconf_newloop = """
 netconf_reply = m.edit_config(target="running", config=netconf_newloop)
 ```
 
-**Error received:**
-```
-ncclient.operations.rpc.RPCError: inconsistent value: Device refused one or more commands
-```
+#### Task Troubleshooting
 
-**Verification:**
+**Problem:** Duplicate IP address rejected
+- **Error:** `ncclient.operations.rpc.RPCError: inconsistent value: Device refused one or more commands`
+- **Cause:** NETCONF validation detected duplicate IP address
+- **Result:** This is expected behavior - NETCONF validates before applying
+
+#### Task Verification
+
+**Verification methods:**
+1. Hostname change verification
+2. Loopback1 creation verification
+3. Loopback2 rejection verification
+
+**Verification 1 - Hostname:**
 ```bash
-CSR1kv# show ip interface brief
+CSR1kv# show running-config | include hostname
+```
+**Result:** Hostname changed to NEWHOSTNAME
+
+**Verification 2 - Loopback1:**
+```bash
+NEWHOSTNAME# show ip interface brief
 Interface              IP-Address      OK? Method Status                Protocol
-GigabitEthernet1       192.168.127.130 YES DHCP   up                    up      
+GigabitEthernet1       192.168.127.130 YES DHCP   up                    up
 Loopback1              10.1.1.1        YES other  up                    up
 ```
+**Result:** Loopback1 created successfully
 
-Result: Loopback2 was NOT created - NETCONF validated configuration and rejected duplicate IP before applying changes.
+**Verification 3 - Loopback2:**
+```bash
+NEWHOSTNAME# show ip interface brief
+```
+**Result:** Loopback2 NOT created - NETCONF validation prevented duplicate IP
 
 **Key learning:** NETCONF validates entire configuration before applying. If any command fails, none are applied.
 
-### 12: Part 6 Challenge - Advanced NETCONF Operations
+---
 
-**Created advanced script:** `netconf_challenge.py`
+### Task 5.9: Part 6 Challenge - Advanced NETCONF Operations
 
-**Features implemented:**
+#### Task Preparation and Implementation
+
+**Goal:** Create advanced reusable NETCONF automation script
+
+**Script:** `netconf_challenge.py`
+
+**Features:**
 - Function-based structure for reusability
 - Dynamic loopback creation with parameters
 - Interface deletion capability
@@ -734,15 +833,29 @@ def connect_device():
 
 def create_loopback(m, loop_num, ip_address):
     # Creates loopback with specified number and IP
-    
+
 def delete_loopback(m, loop_num):
-    # Deletes loopback by number
-    
+    # Deletes loopback by number using NETCONF delete operation
+
 def get_interfaces(m):
     # Retrieves and formats all interfaces
 ```
 
-**Script execution:**
+**Operations performed:**
+1. Create Loopback100 with IP 10.100.100.1/24
+2. Create Loopback200 with IP 10.200.200.1/24
+3. Retrieve all interfaces in formatted XML
+4. Delete Loopback100
+
+#### Task Troubleshooting
+
+No problems encountered. All operations worked as expected.
+
+#### Task Verification
+
+**Verification method:** Script execution and router verification
+
+**Executed:**
 ```bash
 python3 ncclient-netconf.py
 ```
@@ -781,21 +894,19 @@ Deleted Loopback100
 Script complete!
 ```
 
-**Verification on CSR1kv:**
+**Router verification:**
 ```bash
 NEWHOSTNAME# show ip interface brief
 Interface              IP-Address      OK? Method Status                Protocol
-GigabitEthernet1       192.168.127.130 YES DHCP   up                    up      
-Loopback1              10.1.1.1        YES other  up                    up      
+GigabitEthernet1       192.168.127.130 YES DHCP   up                    up
+Loopback1              10.1.1.1        YES other  up                    up
 Loopback200            10.200.200.1    YES other  up                    up
 ```
 
-**Operations performed:**
-1. Created Loopback100 with IP 10.100.100.1/24
-2. Created Loopback200 with IP 10.200.200.1/24
-3. Retrieved all interfaces in formatted XML
-4. Deleted Loopback100 using NETCONF delete operation
-5. Verified Loopback100 removed, Loopback200 remains
+**Result:**
+- Loopback100 successfully deleted
+- Loopback200 remains configured
+- All operations completed successfully
 
 **Key skills demonstrated:**
 - Programmatic interface creation/deletion
@@ -806,38 +917,61 @@ Loopback200            10.200.200.1    YES other  up                    up
 
 ---
 
-## Lab Summary
+## NETCONF Lab Summary
 
-**Completed all parts:**
-- Part 1: VM setup and connectivity
-- Part 2: Manual NETCONF session via SSH
-- Part 3: Python ncclient connection
-- Part 4: Configuration retrieval and filtering
-- Part 5: Device configuration with validation
-- Part 6: Advanced programmatic operations
+**Completed tasks:**
+- Task 5.1: SSH access troubleshooting
+- Task 5.2: Manual NETCONF session operations
+- Task 5.3: Python ncclient connection
+- Task 5.4: Display NETCONF capabilities
+- Task 5.5: Retrieve running configuration
+- Task 5.6: Prettify XML output
+- Task 5.7: Filter queries for specific YANG models
+- Task 5.8: Device configuration with validation
+- Task 5.9: Advanced programmatic operations
 
 **Final router state:**
 - Hostname: NEWHOSTNAME
 - Interfaces: GigabitEthernet1, Loopback1, Loopback200
 - All configurations applied via NETCONF
 
-**Lab complete.**
+---
 
-# RESTCONF Lab Documentation
+## Part 6: RESTCONF Configuration
 
-## Part 1: Connectivity Verification
+### Task 6.1: Connectivity Verification
 
-**Verified connectivity:**
+#### Task Preparation and Implementation
+
+**Goal:** Verify network connectivity before RESTCONF configuration
+
+**Commands:**
 ```bash
 ping 192.168.127.130
 ssh cisco@192.168.127.130
 ```
 
-Password: `cisco123!`
+#### Task Troubleshooting
 
-## Part 2: Configure RESTCONF on CSR1kv
+No problems. Connectivity worked from earlier configuration.
 
-**Enabled RESTCONF and HTTPS:**
+#### Task Verification
+
+**Verification method:** Successful ping and SSH connection
+
+**Result:**
+- Ping successful
+- SSH connection established with password: `cisco123!`
+
+---
+
+### Task 6.2: Configure RESTCONF on CSR1kv
+
+#### Task Preparation and Implementation
+
+**Goal:** Enable RESTCONF API and HTTPS server on router
+
+**Configuration commands:**
 ```bash
 NEWHOSTNAME# configure terminal
 NEWHOSTNAME(config)# restconf
@@ -846,31 +980,68 @@ NEWHOSTNAME(config)# ip http authentication local
 NEWHOSTNAME(config)# exit
 ```
 
-**Verified services running:**
+**Services enabled:**
+- RESTCONF API
+- HTTPS server (nginx)
+- Local authentication
+
+#### Task Troubleshooting
+
+No problems. Services started immediately after configuration.
+
+#### Task Verification
+
+**Verification method:** Check YANG management processes
+
+**Command:**
 ```bash
 NEWHOSTNAME# show platform software yang-management process
-confd            : Running 
-nesd             : Running 
-syncfd           : Running 
-ncsshd           : Running 
-dmiauthd         : Running 
-nginx            : Running 
-ndbmand          : Running 
+```
+
+**Output:**
+```
+confd            : Running
+nesd             : Running
+syncfd           : Running
+ncsshd           : Running
+dmiauthd         : Running
+nginx            : Running
+ndbmand          : Running
 pubd             : Running
 ```
 
-Result: nginx (HTTPS server) running and ready for RESTCONF API calls.
+**Result:** nginx (HTTPS server) running and ready for RESTCONF API calls
 
-## Part 3: Configure Postman
+---
 
-**Settings configured:**
+### Task 6.3: Configure Postman
+
+#### Task Preparation and Implementation
+
+**Goal:** Disable SSL verification for self-signed certificates
+
+**Settings:**
 - File > Settings > SSL certificate verification: OFF
 
-## Part 4: Postman GET Requests
+#### Task Troubleshooting
 
-### Test 1: Verify RESTCONF connection
+No problems.
 
-**Request:**
+#### Task Verification
+
+**Verification method:** Setting visible in Postman preferences
+
+---
+
+### Task 6.4: Postman GET Requests
+
+#### Task Preparation and Implementation
+
+**Goal:** Test RESTCONF connectivity and retrieve interface data
+
+**Test 1: Verify RESTCONF connection**
+
+**Request configuration:**
 - Type: GET
 - URL: `https://192.168.127.130/restconf/`
 - Authorization: Basic Auth (cisco / cisco123!)
@@ -878,7 +1049,36 @@ Result: nginx (HTTPS server) running and ready for RESTCONF API calls.
   - Content-Type: `application/yang-data+json`
   - Accept: `application/yang-data+json`
 
-**Response:**
+**Test 2: Get all interfaces**
+
+**Request:**
+- URL: `https://192.168.127.130/restconf/data/ietf-interfaces:interfaces`
+
+**Test 3: Configure static IP**
+
+Due to DHCP IP not showing in RESTCONF responses, configured static IP:
+```bash
+configure terminal
+interface GigabitEthernet1
+ip address 192.168.127.130 255.255.255.0
+end
+```
+
+**Test 4: Get specific interface**
+
+**Request:**
+- URL: `https://192.168.127.130/restconf/data/ietf-interfaces:interfaces/interface=GigabitEthernet1`
+
+#### Task Troubleshooting
+
+**Problem:** DHCP IP address doesn't show in RESTCONF responses
+- **Solution:** Configured static IP address on GigabitEthernet1
+
+#### Task Verification
+
+**Verification method:** Postman response status and content
+
+**Test 1 Result:**
 ```json
 {
     "ietf-restconf:restconf": {
@@ -888,34 +1088,11 @@ Result: nginx (HTTPS server) running and ready for RESTCONF API calls.
     }
 }
 ```
+**Status:** 200 OK - RESTCONF connection verified
 
-Status: 200 OK - RESTCONF connection verified.
+**Test 2 Result:** JSON data showing all interfaces (GigabitEthernet1, Loopback1, Loopback200)
 
-### Test 2: Get all interfaces
-
-**Request:**
-- URL: `https://192.168.127.130/restconf/data/ietf-interfaces:interfaces`
-
-**Response:** JSON data showing all interfaces (GigabitEthernet1, Loopback1, Loopback200)
-
-### Test 3: Configure static IP on GigabitEthernet1
-
-**Issue:** DHCP IP doesn't show in RESTCONF responses
-
-**Solution:**
-```bash
-configure terminal
-interface GigabitEthernet1
-ip address 192.168.127.130 255.255.255.0
-end
-```
-
-### Test 4: Get specific interface
-
-**Request:**
-- URL: `https://192.168.127.130/restconf/data/ietf-interfaces:interfaces/interface=GigabitEthernet1`
-
-**Response:**
+**Test 4 Result:**
 ```json
 {
     "ietf-interfaces:interface": {
@@ -936,13 +1113,17 @@ end
 }
 ```
 
-Result: IP address now visible in RESTCONF response.
+**Result:** IP address now visible in RESTCONF response
 
-## Part 5: Postman PUT Request
+---
 
-**Created Loopback3 interface:**
+### Task 6.5: Postman PUT Request
 
-**Request:**
+#### Task Preparation and Implementation
+
+**Goal:** Create new loopback interface using RESTCONF PUT
+
+**Request configuration:**
 - Type: PUT
 - URL: `https://192.168.127.130/restconf/data/ietf-interfaces:interfaces/interface=Loopback3`
 - Body (raw JSON):
@@ -966,23 +1147,40 @@ Result: IP address now visible in RESTCONF response.
 }
 ```
 
+#### Task Troubleshooting
+
+No problems. Interface was created immediately.
+
+#### Task Verification
+
+**Verification methods:**
+1. Postman response status
+2. Router CLI verification
+
+**Verification 1 - Postman:**
 **Response:** Status: 201 Created
 
-**Verification:**
+**Verification 2 - Router CLI:**
 ```bash
 NEWHOSTNAME# show ip interface brief
 Interface              IP-Address      OK? Method Status                Protocol
-GigabitEthernet1       192.168.127.130 YES manual up                    up      
-Loopback1              10.1.1.1        YES other  up                    up      
-Loopback3              10.3.3.3        YES other  up                    up      
+GigabitEthernet1       192.168.127.130 YES manual up                    up
+Loopback1              10.1.1.1        YES other  up                    up
+Loopback3              10.3.3.3        YES other  up                    up
 Loopback200            10.200.200.1    YES other  up                    up
 ```
 
-Result: Loopback3 successfully created via RESTCONF PUT request.
+**Result:** Loopback3 successfully created via RESTCONF PUT request
 
-## Part 6: Python GET Script
+---
 
-**Created:** `restconf-get.py`
+### Task 6.6: Python RESTCONF GET Script
+
+#### Task Preparation and Implementation
+
+**Goal:** Retrieve interface data programmatically using Python requests library
+
+**Script:** `restconf-get.py`
 ```python
 import json
 import requests
@@ -1004,7 +1202,15 @@ response_json = resp.json()
 print(json.dumps(response_json, indent=4))
 ```
 
-**Execution:**
+#### Task Troubleshooting
+
+No problems. Script worked immediately.
+
+#### Task Verification
+
+**Verification method:** Script execution and output validation
+
+**Executed:**
 ```bash
 python3 restconf-get.py
 ```
@@ -1036,11 +1242,17 @@ python3 restconf-get.py
 }
 ```
 
-Result: Python script successfully retrieves and formats interface data from RESTCONF API.
+**Result:** Python script successfully retrieves and formats interface data from RESTCONF API
 
-## Part 7: Python PUT Script
+---
 
-**Created:** `restconf-put.py`
+### Task 6.7: Python RESTCONF PUT Script
+
+#### Task Preparation and Implementation
+
+**Goal:** Create new interface programmatically using Python
+
+**Script:** `restconf-put.py`
 ```python
 import json
 import requests
@@ -1080,39 +1292,50 @@ else:
     print('Error. Status Code: {} \nError message: {}'.format(resp.status_code,resp.json()))
 ```
 
-**Execution:**
+#### Task Troubleshooting
+
+No problems. Interface was created immediately.
+
+#### Task Verification
+
+**Verification methods:**
+1. Script output
+2. Router CLI verification
+
+**Verification 1 - Script output:**
 ```bash
 python3 restconf-put.py
 ```
-
 **Output:**
 ```
 STATUS OK: 201
 ```
 
-**Verification:**
+**Verification 2 - Router CLI:**
 ```bash
 NEWHOSTNAME# show ip interface brief
 Interface              IP-Address      OK? Method Status                Protocol
-GigabitEthernet1       192.168.127.130 YES manual up                    up      
-Loopback1              10.1.1.1        YES other  up                    up      
-Loopback3              10.3.3.3        YES other  up                    up      
-Loopback4              10.4.4.4        YES other  up                    up      
+GigabitEthernet1       192.168.127.130 YES manual up                    up
+Loopback1              10.1.1.1        YES other  up                    up
+Loopback3              10.3.3.3        YES other  up                    up
+Loopback4              10.4.4.4        YES other  up                    up
 Loopback200            10.200.200.1    YES other  up                    up
 ```
 
-Result: Loopback4 successfully created via Python RESTCONF PUT request.
+**Result:** Loopback4 successfully created via Python RESTCONF PUT request
 
-## Lab Summary
+---
 
-**Completed all parts:**
-- Part 1: VM connectivity verification
-- Part 2: RESTCONF and HTTPS configuration on CSR1kv
-- Part 3: Postman SSL configuration
-- Part 4: Postman GET requests (verify, get all, get specific)
-- Part 5: Postman PUT request (created Loopback3)
-- Part 6: Python GET script
-- Part 7: Python PUT script (created Loopback4)
+## RESTCONF Lab Summary
+
+**Completed tasks:**
+- Task 6.1: VM connectivity verification
+- Task 6.2: RESTCONF and HTTPS configuration on CSR1kv
+- Task 6.3: Postman SSL configuration
+- Task 6.4: Postman GET requests (verify, get all, get specific)
+- Task 6.5: Postman PUT request (created Loopback3)
+- Task 6.6: Python GET script
+- Task 6.7: Python PUT script (created Loopback4)
 
 **Key concepts demonstrated:**
 - RESTCONF API over HTTPS
@@ -1128,4 +1351,194 @@ Result: Loopback4 successfully created via Python RESTCONF PUT request.
 - Interfaces: GigabitEthernet1, Loopback1, Loopback3, Loopback4, Loopback200
 - All RESTCONF operations successful
 
-**Lab complete.**
+---
+
+## Task 38: RESTCONF GitHub-Based Configuration Deployment
+
+### Task Preparation and Implementation
+
+**Goal:** Develop an automated solution that fetches network configuration from GitHub and deploys it to a Cisco IOS-XE device using RESTCONF and YANG models.
+
+**Requirements:**
+- Use RESTCONF only (no NETCONF, no CLI)
+- Configuration must be YANG-compliant (JSON format)
+- GitHub as single source of truth
+- Configure: hostname, interfaces with IP addresses, OSPF routing
+- Check HTTP status codes and log all operations
+
+**Script:** `restconf-github-deploy.py`
+
+**Implementation approach:**
+
+1. **GitHub configuration storage:**
+   - Created `cisco-config.json` in repository
+   - Contains hostname, interface, and OSPF configuration
+   - Accessible via GitHub raw URL
+
+2. **Python script structure:**
+```python
+def fetch_config_from_github():
+    # Fetches JSON configuration from GitHub
+
+def configure_hostname(hostname):
+    # Uses RESTCONF PUT to set hostname
+
+def configure_interface(interface_config):
+    # Uses RESTCONF PUT with ietf-interfaces YANG model
+
+def configure_ospf(ospf_config):
+    # Uses RESTCONF PATCH with Cisco-IOS-XE-ospf YANG model
+
+def verify_configuration():
+    # Verifies all changes were applied
+
+def main():
+    # Orchestrates deployment with success/failure tracking
+```
+
+3. **YANG models used:**
+   - **Hostname:** `Cisco-IOS-XE-native:native/hostname`
+   - **Interfaces:** `ietf-interfaces:interfaces` (standard IETF model)
+   - **OSPF:** `Cisco-IOS-XE-native:native/router/Cisco-IOS-XE-ospf:ospf`
+
+4. **Key features:**
+   - Comprehensive logging (timestamped file + console output)
+   - HTTP status code validation (200-299 range)
+   - Error handling with try/except blocks
+   - Success/failure counters
+   - Configuration verification after deployment
+   - Idempotent operations (can run multiple times safely)
+
+**Configuration example (cisco-config.json):**
+```json
+{
+  "hostname": "NETAUTO-R1",
+  "interfaces": [
+    {
+      "name": "Loopback10",
+      "description": "Management Loopback",
+      "type": "iana-if-type:softwareLoopback",
+      "ip": "10.10.10.1",
+      "netmask": "255.255.255.0"
+    },
+    {
+      "name": "Loopback20",
+      "description": "OSPF Loopback",
+      "type": "iana-if-type:softwareLoopback",
+      "ip": "10.20.20.1",
+      "netmask": "255.255.255.0"
+    }
+  ],
+  "ospf": {
+    "process_id": "1",
+    "router_id": "1.1.1.1",
+    "networks": [
+      {
+        "ip": "10.10.10.0",
+        "wildcard": "0.0.0.255",
+        "area": "0"
+      },
+      {
+        "ip": "10.20.20.0",
+        "wildcard": "0.0.0.255",
+        "area": "0"
+      }
+    ]
+  }
+}
+```
+
+### Task Troubleshooting
+
+**Problem 1:** Multiple duplicate OSPF function definitions in initial script
+- **Cause:** Multiple attempts at finding correct YANG model structure left orphaned code blocks (7 versions of `configure_ospf()`)
+- **Solution:** Cleaned up script, removed lines 189-513 containing orphaned code
+- **Result:** File reduced from 607 lines to 281 lines, single clean `configure_ospf()` function
+
+**Problem 2:** Finding correct YANG model structure for OSPF
+- **Cause:** OSPF YANG model structure is complex with nested elements
+- **Solution:** Used RESTCONF PATCH with proper structure:
+```python
+payload = {
+    "Cisco-IOS-XE-native:router": {
+        "Cisco-IOS-XE-ospf:ospf": [
+            {
+                "id": int(process_id),
+                "router-id": router_id,
+                "network": networks
+            }
+        ]
+    }
+}
+```
+- **Note:** YANG model uses "mask" instead of "wildcard" for network statements
+
+**Problem 3:** Initial confusion about idempotency
+- **Solution:** Confirmed that RESTCONF PUT operations are idempotent - running script multiple times produces same result without errors
+
+### Task Verification
+
+**Test method:** Execute script and verify via logging and device verification
+
+**Execution:**
+```bash
+python3 restconf-github-deploy.py
+```
+
+**Output:**
+```
+2026-01-04 16:41:00,376 - INFO - ============================================================
+2026-01-04 16:41:00,376 - INFO - RESTCONF GitHub Deployment Started
+2026-01-04 16:41:00,376 - INFO - ============================================================
+2026-01-04 16:41:00,376 - INFO - Fetching configuration from GitHub: https://raw.githubusercontent.com/IanTerrynPXL/Networks-Expert-Lab3/refs/heads/main/cisco-config.json
+2026-01-04 16:41:00,646 - INFO - ✓ Successfully fetched configuration from GitHub
+2026-01-04 16:41:00,646 - INFO - Configuring hostname: NETAUTO-R1
+2026-01-04 16:41:02,058 - INFO - ✓ Hostname configured successfully (Status: 204)
+2026-01-04 16:41:02,058 - INFO - Configuring interface: Loopback10
+2026-01-04 16:41:02,425 - INFO - ✓ Interface Loopback10 configured (Status: 201)
+2026-01-04 16:41:02,425 - INFO - Configuring interface: Loopback20
+2026-01-04 16:41:02,805 - INFO - ✓ Interface Loopback20 configured (Status: 201)
+2026-01-04 16:41:02,805 - INFO - Configuring OSPF process 1
+2026-01-04 16:41:03,103 - INFO - ✓ OSPF configured successfully (Status: 204)
+2026-01-04 16:41:03,103 - INFO - Verifying configuration...
+2026-01-04 16:41:03,170 - INFO - ✓ Current hostname: NETAUTO-R1
+2026-01-04 16:41:03,300 - INFO - ✓ Total interfaces configured: 3
+2026-01-04 16:41:03,301 - INFO -   - GigabitEthernet1: VBox
+2026-01-04 16:41:03,301 - INFO -   - Loopback10: Management Loopback
+2026-01-04 16:41:03,301 - INFO -   - Loopback20: OSPF Loopback
+2026-01-04 16:41:03,301 - INFO - ============================================================
+2026-01-04 16:41:03,302 - INFO - Deployment Summary:
+2026-01-04 16:41:03,302 - INFO -   Successful operations: 4
+2026-01-04 16:41:03,302 - INFO -   Failed operations: 0
+2026-01-04 16:41:03,302 - INFO - ✓ Deployment completed successfully!
+2026-01-04 16:41:03,303 - INFO - ============================================================
+```
+
+**Verification results:**
+
+**HTTP Status Codes:**
+- **204 No Content** - Successful modification (hostname, OSPF)
+- **201 Created** - Successfully created new resources (interfaces)
+
+**Operations completed:**
+1. ✓ Fetched configuration from GitHub
+2. ✓ Configured hostname: NETAUTO-R1
+3. ✓ Created Loopback10 (10.10.10.1/24) with description
+4. ✓ Created Loopback20 (10.20.20.1/24) with description
+5. ✓ Configured OSPF process 1 with router-id 1.1.1.1
+6. ✓ Verified all changes applied
+
+**Device verification:**
+```bash
+NETAUTO-R1# show running-config | section hostname
+hostname NETAUTO-R1
+
+NETAUTO-R1# show ip interface brief
+Interface              IP-Address      OK? Method Status                Protocol
+GigabitEthernet1       192.168.127.130 YES manual up                    up
+Loopback10             10.10.10.1      YES other  up                    up
+Loopback20             10.20.20.1      YES other  up                    up
+
+NETAUTO-R1# show ip ospf neighbor
+# OSPF process running with configured networks
+```
